@@ -52,8 +52,8 @@ test('impossible literal case includes its field location', () => {
   rejects(() => new Validator().validateType(packet(choice({ gamma: 'void' }))), 'payload', 'kind', 'gamma');
 });
 
-test('wire keys are not mapper outputs', () => {
-  rejects(() => new Validator().validateType(packet(choice({ 0: 'void' }))), 'payload', 'kind', '0');
+test('raw numeric mapper values may reach numeric switch cases', () => {
+  new Validator().validateType(packet(choice({ 2: 'void' })));
 });
 
 test('a default does not permit an impossible explicit case', () => {
@@ -69,6 +69,28 @@ test('partial and empty case coverage are allowed', () => {
 
 test('numeric-looking output strings remain valid cases', () => {
   new Validator().validateType(packet(choice({ 7: 'void' }), mapper({ 0: '7' })));
+});
+
+test('numeric relationships are left unchecked', () => {
+  for (const [output, key] of [['1', '0x1'], ['1', '0b1'], ['1', '1e0'], ['0x1', '1'], ['1', '2']]) {
+    const type = packet(choice({ [key]: 'void' }), mapper({ 0: output }));
+    const before = JSON.stringify(type);
+    new Validator().validateType(type);
+    new Validator().validateProtocol({ types: { Kind: mapper({ 0: output }), Packet: packet(choice({ [key]: 'void' }), 'Kind') } });
+    assert.strictEqual(JSON.stringify(type), before);
+  }
+});
+
+test('numeric outputs do not hide impossible named cases', () => {
+  rejects(() => new Validator().validateType(packet(
+    choice({ '0x1': 'void', typo: 'void' }, 'kind', 'void'),
+    mapper({ 0: '1', 1: 'known' })
+  )), 'payload', 'kind', 'typo');
+  rejects(() => new Validator().validateProtocol({ types: {
+    Kind: mapper({ 0: '1', 1: 'known' }), Alias: 'Kind',
+    Body: container(field('payload', choice({ typo: 'void' }, '../kind'))),
+    Packet: packet('Body', 'Alias')
+  } }), 'Packet', '../kind', 'typo');
 });
 
 test('named mapper aliases and chains are resolved', () => {

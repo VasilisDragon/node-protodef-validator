@@ -27,6 +27,10 @@ values are allowed. Errors identify the definition, comparator and invalid case.
 This check follows ordinary container fields, parent references and unambiguous
 non-parameterized protocol aliases. It skips relationships whose meaning is
 unknown, including custom types, dynamic case keys and ambiguous scopes.
+Numeric switch cases are also left unchecked: supported engines disagree on
+numeric labels, and compiled mappers can pass through unknown numeric IDs.
+Named cases are still checked, including those in the same switch. Acceptance
+does not establish that a numeric relationship works in either engine.
 `addType` schemas alone do not describe decoded values. This checks mapper/switch
 consistency, not whether mapper wire IDs match an external protocol.
 

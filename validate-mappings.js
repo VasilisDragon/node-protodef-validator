@@ -65,6 +65,9 @@ function createChecker(schemas) {
     for(const value of Object.keys(args.fields)) {
       // These keys are runtime references, rather than literal case values.
       if(value.startsWith('/')) continue;
+      // Engines disagree on numeric labels, and compiled mappers can pass
+      // unknown numeric IDs through. Only infer membership for named cases.
+      if(!isNaN(value)) continue;
       if(!producer.values.has(value)) {
         throw new Error('Error at ' + path + ': switch compareTo ' +
           JSON.stringify(args.compareTo) + ' has impossible case ' + JSON.stringify(value) +
